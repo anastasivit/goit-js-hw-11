@@ -5,15 +5,15 @@ let page = 1;
 
 form.addEventListener('submit', e => {
   e.preventDefault();
-  const searchQuery = form.searchQuery.value;
-  if (searchQuery.trim() === '') return;
+  const searchQuery = form.searchQuery.value.trim();
+  if (searchQuery === '') return;
 
   clearGallery();
   searchImages(searchQuery);
 });
 
 loadMoreBtn.addEventListener('click', () => {
-  const searchQuery = form.searchQuery.value;
+  const searchQuery = form.searchQuery.value.trim();
   searchImages(searchQuery);
 });
 
@@ -23,41 +23,41 @@ function clearGallery() {
   loadMoreBtn.style.display = 'none';
 }
 
-function searchImages(query) {
+async function searchImages(query) {
   const apiKey = '36785926-9df8e575763dc5d4ea5ec1ee8';
   const perPage = 40;
   const apiUrl = `https://pixabay.com/api/?key=${apiKey}&q=${query}&image_type=photo&orientation=horizontal&safesearch=true&page=${page}&per_page=${perPage}`;
 
-  fetch(apiUrl)
-    .then(response => response.json())
-    .then(data => {
-      if (data.hits.length === 0) {
-        showNotification(
-          'Sorry, there are no images matching your search query. Please try again.'
-        );
-        return;
-      }
+  try {
+    const response = await axios.get(apiUrl);
+    const data = response.data;
 
-      data.hits.forEach(image => {
-        const card = createImageCard(image);
-        gallery.appendChild(card);
-      });
+    if (data.hits.length === 0) {
+      showNotification(
+        'Sorry, there are no images matching your search query. Please try again.'
+      );
+      return;
+    }
 
-      if (data.totalHits > page * perPage) {
-        loadMoreBtn.style.display = 'block';
-      } else {
-        showNotification(
-          "We're sorry, but you've reached the end of search results."
-        );
-        loadMoreBtn.style.display = 'none';
-      }
-
-      page++;
-    })
-    .catch(error => {
-      console.error('Error:', error);
-      showNotification('An error occurred. Please try again later.');
+    data.hits.forEach(image => {
+      const card = createImageCard(image);
+      gallery.appendChild(card);
     });
+
+    if (data.totalHits > page * perPage) {
+      loadMoreBtn.style.display = 'block';
+    } else {
+      showNotification(
+        "We're sorry, but you've reached the end of search results."
+      );
+      loadMoreBtn.style.display = 'none';
+    }
+
+    page++;
+  } catch (error) {
+    console.error('Error:', error);
+    showNotification('An error occurred. Please try again later.');
+  }
 }
 
 function createImageCard(image) {
